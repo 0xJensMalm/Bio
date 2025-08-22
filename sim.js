@@ -20,6 +20,13 @@
 
       this.img = this.ctx.createImageData(this.W*this.SCALE, this.H*this.SCALE);
       this.data = this.img.data;
+
+      this.theme = {
+        foodLow: [8, 30, 60],
+        foodHigh: [110, 195, 255],
+        bacteria: [170, 255, 190],
+        gamma: 1.0
+      };
     }
 
     // RNG
@@ -119,26 +126,52 @@
       this.F = Ftmp; this.Ftmp = F;
     }
 
-    render(Fmax){
+    render(Fmax, overlayCtx){
       const W = this.W, H = this.H, SCALE = this.SCALE, data = this.data, img = this.img;
+      const [rl,gl,bl] = this.theme.foodLow;
+      const [rh,gh,bh] = this.theme.foodHigh;
+      const gamma = this.theme.gamma || 1.0;
       // Food
       for (let y=0; y<H; y++){
         for (let x=0; x<W; x++){
           const i = x + y*W;
           const f = this.F[i];
-          const v = Fmax > 0 ? (f / Fmax) : 0;
-          const r = (8 + 30*v)|0;
-          const g = (14 + 150*v)|0;
-          const b = (28 + 200*v)|0;
+          let v = Fmax > 0 ? (f / Fmax) : 0;
+          if (gamma !== 1.0){ v = Math.pow(v, 1/gamma); }
+          const r = (rl + (rh-rl)*v)|0;
+          const g = (gl + (gh-gl)*v)|0;
+          const b = (bl + (bh-bl)*v)|0;
           this.putScaledPixel(x, y, r, g, b, 255);
         }
       }
-      // Bacteria
+      // Bacteria (base)
       for (let i=0;i<this.B.length;i++){
         const {x,y} = this.B[i];
-        this.putScaledPixel(x, y, 170, 255, 190, 255);
+        const [br,bg,bb] = this.theme.bacteria;
+        this.putScaledPixel(x, y, br, bg, bb, 255);
       }
       this.ctx.putImageData(img, 0, 0);
+
+      // Tracer overlay
+      if (overlayCtx){
+        const alpha = this.theme.tracerAlpha || 0;
+        if (alpha > 0){
+          overlayCtx.globalCompositeOperation = 'destination-out';
+          overlayCtx.fillStyle = `rgba(0,0,0,${0.08 + (0.4*alpha)})`;
+          overlayCtx.fillRect(0,0,this.canvas.width,this.canvas.height);
+          overlayCtx.globalCompositeOperation = 'lighter';
+          const [br,bg,bb] = this.theme.bacteria;
+          overlayCtx.fillStyle = `rgba(${br},${bg},${bb},${Math.min(0.9, 0.2+alpha)})`;
+          const ps = this.SCALE;
+          for (let i=0;i<this.B.length;i++){
+            const {x,y} = this.B[i];
+            overlayCtx.fillRect(x*ps, y*ps, ps, ps);
+          }
+          overlayCtx.globalCompositeOperation = 'source-over';
+        } else {
+          overlayCtx.clearRect(0,0,this.canvas.width,this.canvas.height);
+        }
+      }
     }
 
     putScaledPixel(x, y, r, g, b, a){
@@ -163,6 +196,22 @@
         births: this.birthsTotal,
         deaths: this.deathsTotal
       };
+    }
+
+    setTheme({ foodLow, foodHigh, bacteria, gamma, tracerAlpha }){
+      const parse = (hex)=>{
+        if (!hex) return null;
+        const m = /^#?([0-9a-fA-F]{6})$/.exec(hex);
+        if (!m) return null;
+        const h = m[1];
+        return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+      };
+      const fl = parse(foodLow); const fh = parse(foodHigh); const bc = parse(bacteria);
+      if (fl) this.theme.foodLow = fl;
+      if (fh) this.theme.foodHigh = fh;
+      if (bc) this.theme.bacteria = bc;
+      if (typeof gamma === 'number') this.theme.gamma = gamma;
+      if (typeof tracerAlpha === 'number') this.theme.tracerAlpha = tracerAlpha;
     }
   }
 

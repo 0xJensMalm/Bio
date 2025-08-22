@@ -27,6 +27,8 @@ header .sub { color: var(--muted); font-size: 12px; }
 
 .board-wrap { position: relative; background: #0b0e1a; border: 1px solid #20264a; border-radius: 14px; padding: 10px; display: grid; align-content: start; grid-area: board; }
 canvas { image-rendering: pixelated; width: 100%; height: auto; border-radius: 10px; display: block; background: #000; }
+.board-wrap { position: relative; }
+#overlay { position: absolute; inset: 10px; width: calc(100% - 20px); height: auto; pointer-events: none; border-radius: 10px; background: transparent; }
 
 .hud {
   position: absolute; left: 16px; top: 14px; padding: 8px 10px; border-radius: 10px;

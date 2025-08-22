@@ -14,6 +14,7 @@
 
   <div class="board-wrap">
     <canvas id="view" width="600" height="400" aria-label="Simulation view"></canvas>
+    <canvas id="overlay" width="600" height="400" aria-label="Bacteria overlay"></canvas>
     <div class="hud" id="hud" style="display:none"></div>
   </div>
 
@@ -37,6 +38,7 @@
     </div>
     <div class="world-spacer"></div>
     <div class="world-right">
+      <button id="btnParams">Biology &amp; Food</button>
       <button id="btnThemes">Themes</button>
     </div>
     <div class="small" style="width:100%">Re-run Reset after changing seed or counts.</div>
@@ -80,6 +82,20 @@
     </div>
   </div>
 
+  <div class="panel" id="themesPanel" style="display:none">
+    <div class="section">
+      <h3>Themes</h3>
+      <div class="row"><label>Food low</label><input type="color" id="thFoodLow" value="#081e3c"></div>
+      <div class="row"><label>Food high</label><input type="color" id="thFoodHigh" value="#6ec3ff"></div>
+      <div class="row"><label>Bacteria</label><input type="color" id="thBacteria" value="#aaffbe"></div>
+      <div class="row"><label>Gamma</label><input type="range" id="fxGamma" min="0.5" max="2.0" step="0.05" value="1.0"><span class="value" data-val="fxGamma">1.00</span></div>
+      <div class="row"><label>Tracers</label><input type="range" id="fxTrace" min="0" max="1" step="0.05" value="0.4"><span class="value" data-val="fxTrace">0.40</span></div>
+      <div class="btns">
+        <button id="btnThemeApply" class="primary">Apply</button>
+      </div>
+    </div>
+  </div>
+
   <div class="insights">
     <div class="section">
       <h3>Data Insights</h3>
@@ -118,6 +134,7 @@
     </div>
   </div>
   <script src="sim.js"></script>
+  <script src="themes.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

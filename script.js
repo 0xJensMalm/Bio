@@ -6,6 +6,7 @@
   const ctx = canvas.getContext('2d', { alpha: false });
   const hud = document.getElementById('hud');
   const sim = new Sim(canvas, hud);
+  window.simInstance = sim;
 
   // UI refs
   const ui = {
@@ -37,6 +38,7 @@
       // Update sim internals
       sim.W = opt.W; sim.H = opt.H;
       sim.canvas.width = sim.W * sim.SCALE; sim.canvas.height = sim.H * sim.SCALE;
+      if (overlay){ overlay.width = sim.canvas.width; overlay.height = sim.canvas.height; }
       sim.img = sim.ctx.createImageData(sim.W*sim.SCALE, sim.H*sim.SCALE);
       sim.data = sim.img.data;
       sim.F = new Float32Array(sim.W*sim.H);
@@ -146,8 +148,10 @@
   }
 
   // ===================== Rendering =====================
+  const overlay = document.getElementById('overlay');
+  const overlayCtx = overlay ? overlay.getContext('2d') : null;
   function draw(){
-    sim.render(parseFloat(ui.Fmax.value));
+    sim.render(parseFloat(ui.Fmax.value), overlayCtx);
   }
 
   function putScaledPixel(x, y, r, g, b, a){
