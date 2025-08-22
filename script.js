@@ -17,6 +17,45 @@
   qid('gridSize').textContent = `${sim.W}×${sim.H}`;
   qid('pxScale').textContent = `${sim.SCALE}`;
 
+  // Cycle grid resolutions
+  const gridOptions = [
+    { W: 120, H: 80 },
+    { W: 150, H: 100 },
+    { W: 180, H: 120 },
+  ];
+  let gridIdx = Math.max(0, gridOptions.findIndex(o=> o.W===sim.W && o.H===sim.H));
+  if (gridIdx === -1) gridIdx = 0;
+  const btnGrid = document.getElementById('btnGrid');
+  if (btnGrid){
+    btnGrid.addEventListener('click', ()=>{
+      gridIdx = (gridIdx + 1) % gridOptions.length;
+      const opt = gridOptions[gridIdx];
+      // Change resolution, keep SCALE constant
+      const wasRunning = running;
+      running = false;
+      const oldCanvas = document.getElementById('view');
+      // Update sim internals
+      sim.W = opt.W; sim.H = opt.H;
+      sim.canvas.width = sim.W * sim.SCALE; sim.canvas.height = sim.H * sim.SCALE;
+      sim.img = sim.ctx.createImageData(sim.W*sim.SCALE, sim.H*sim.SCALE);
+      sim.data = sim.img.data;
+      sim.F = new Float32Array(sim.W*sim.H);
+      sim.Ftmp = new Float32Array(sim.W*sim.H);
+      // Update labels
+      qid('gridSize').textContent = `${sim.W}×${sim.H}`;
+      qid('pxScale').textContent = `${sim.SCALE}`;
+      // Reset world with new size
+      sim.reset(
+        ui.rngSeed.value,
+        parseInt(ui.initB.value,10),
+        parseFloat(ui.seedNoise.value),
+        parseFloat(ui.E_div.value)
+      );
+      draw(); updateHUD();
+      running = wasRunning;
+    });
+  }
+
   // RNG (mulberry32)
   function mulberry32(a){ return function(){ let t = a += 0x6D2B79F5; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; } }
   let rand = mulberry32(42);
