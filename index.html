@@ -14,7 +14,7 @@
 
   <div class="board-wrap">
     <canvas id="view" width="600" height="400" aria-label="Simulation view"></canvas>
-    <div class="hud" id="hud"></div>
+    <div class="hud" id="hud" style="display:none"></div>
   </div>
 
   <div class="world-bar">
@@ -75,6 +75,35 @@
     <div class="section">
       <h3>Legend</h3>
       <div class="small">Food field = dark→bright. Bacteria = pale green pixels. Division places offspring in a random neighboring tile. No movement by default (add easily).</div>
+    </div>
+  </div>
+
+  <div class="insights">
+    <div class="section">
+      <h3>Data Insights</h3>
+      <div class="cards">
+        <div class="card"><div class="card-title">Ticks</div><div class="card-value" id="statTicks">0</div></div>
+        <div class="card"><div class="card-title">Bacteria</div><div class="card-value" id="statCount">0</div></div>
+        <div class="card"><div class="card-title">Avg Energy</div><div class="card-value" id="statAvgE">0.00</div></div>
+        <div class="card"><div class="card-title">Avg Food</div><div class="card-value" id="statAvgF">0.000</div></div>
+        <div class="card"><div class="card-title">Births</div><div class="card-value" id="statBirths">0</div></div>
+        <div class="card"><div class="card-title">Deaths</div><div class="card-value" id="statDeaths">0</div></div>
+      </div>
+    </div>
+    <div class="section">
+      <h3>Trends</h3>
+      <div class="charts">
+        <div class="chart">
+          <div class="chart-title">Population over time</div>
+          <div class="chart-desc">Total bacteria count tracked per frame.</div>
+          <canvas id="chartCount" width="600" height="120" aria-label="Bacteria over time"></canvas>
+        </div>
+        <div class="chart">
+          <div class="chart-title">Average food over time</div>
+          <div class="chart-desc">Mean food concentration across the grid.</div>
+          <canvas id="chartFood" width="600" height="120" aria-label="Avg food over time"></canvas>
+        </div>
+      </div>
     </div>
   </div>
 

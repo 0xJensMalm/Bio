@@ -124,13 +124,46 @@
 
   function updateHUD(){
     const stats = sim.getStats(parseFloat(ui.Fmax.value));
-    hud.innerHTML = `
-      <div><strong>Ticks:</strong> ${stats.ticks}</div>
-      <div><strong>Bacteria:</strong> ${stats.count}</div>
-      <div><strong>Avg energy:</strong> ${stats.avgE.toFixed(2)}</div>
-      <div><strong>Avg food:</strong> ${stats.avgFood.toFixed(3)}</div>
-      <div><strong>Births:</strong> ${stats.births} &nbsp; <strong>Deaths:</strong> ${stats.deaths}</div>
-    `;
+    // Update insights cards
+    const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    setText('statTicks', String(stats.ticks));
+    setText('statCount', String(stats.count));
+    setText('statAvgE', stats.avgE.toFixed(2));
+    setText('statAvgF', stats.avgFood.toFixed(3));
+    setText('statBirths', String(stats.births));
+    setText('statDeaths', String(stats.deaths));
+  }
+
+  // ===================== Simple Charts =====================
+  const chartCount = document.getElementById('chartCount');
+  const chartFood = document.getElementById('chartFood');
+  const chartCtxCount = chartCount ? chartCount.getContext('2d') : null;
+  const chartCtxFood = chartFood ? chartFood.getContext('2d') : null;
+  const histLen = 300;
+  const seriesCount = []; const seriesFood = [];
+
+  function pushSeries(){
+    const s = sim.getStats(parseFloat(ui.Fmax.value));
+    seriesCount.push(s.count);
+    seriesFood.push(s.avgFood);
+    if (seriesCount.length > histLen) seriesCount.shift();
+    if (seriesFood.length > histLen) seriesFood.shift();
+  }
+
+  function drawSeries(ctx, series, color){
+    if (!ctx || series.length < 2) return;
+    const w = ctx.canvas.width, h = ctx.canvas.height;
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#0b0e1a'; ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath();
+    const min = Math.min(...series), max = Math.max(...series);
+    const range = (max - min) || 1;
+    for (let i=0;i<series.length;i++){
+      const x = i / (histLen-1) * (w-10) + 5;
+      const y = h - 5 - ((series[i]-min)/range) * (h-10);
+      if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
   }
 
   // ===================== Loop =====================
@@ -139,6 +172,9 @@
       const steps = parseInt(ui.speed.value,10);
       for (let s=0;s<steps;s++) simulateTick();
       draw(); updateHUD();
+      pushSeries();
+      drawSeries(chartCtxCount, seriesCount, '#7ae582');
+      drawSeries(chartCtxFood, seriesFood, '#6ec3ff');
     }
     requestAnimationFrame(loop);
   }
@@ -204,47 +240,47 @@
   const paramInfo = {
     'u_max': {
       title: 'u_max — Max uptake rate',
-      body: 'Maximum food uptake rate in Monod kinetics. Controls how quickly cells can consume when food is plentiful.'
+      body: 'Think of u_max as appetite.\n\nBiologically: The maximum substrate uptake rate in Monod kinetics. When food is abundant, uptake approaches u_max.\nEmergence: Higher u_max accelerates front expansion and can create sharp invasion waves. Too high with low F_max may rapidly deplete food and cause boom-bust cycles.'
     },
     'K': {
       title: 'K — Half-saturation',
-      body: 'Food concentration at which uptake reaches half of u_max. Lower K increases efficiency at low food levels.'
+      body: 'Sensitivity to scarcity.\n\nBiologically: The substrate level where uptake is half of u_max. Lower K means better scavenging at low concentrations.\nEmergence: Lower K supports survival on the fringes and produces broader, softer fronts; higher K favors rich patches and can produce patchy growth.'
     },
     'c_maint': {
       title: 'c_maint — Maintenance cost',
-      body: 'Baseline energy expenditure per tick. If uptake cannot cover this, energy declines and cells may die.'
+      body: 'The metabolic “rent.”\n\nBiologically: Baseline energy drain each tick to stay alive.\nEmergence: Raising c_maint prunes weak colonies and amplifies differences between rich and poor regions. Too high can cause mass die-off if food diffusivity is low.'
     },
     'Y_E': {
       title: 'Y_E — Yield to energy',
-      body: 'Fraction of consumed food converted to internal energy. Higher values allow energy to accumulate faster.'
+      body: 'How efficiently dinner becomes battery charge.\n\nBiologically: Conversion factor from uptake to internal energy.\nEmergence: Higher yield lets cells hit division sooner, increasing birth rates; combined with diffusion and replenish, it controls the balance between steady growth vs. oscillations.'
     },
     'E_div': {
       title: 'E_div — Division threshold',
-      body: 'Internal energy level required to trigger division. On division, a new cell spawns in a neighboring tile.'
+      body: 'The birth trigger.\n\nMechanics: Minimum internal energy required to divide.\nEmergence: Lowering E_div increases branching and dense clusters; higher E_div delays division and yields sparser, more exploratory populations.'
     },
     'E_new': {
       title: 'E_new — Offspring energy',
-      body: 'Initial energy granted to the offspring. Parent loses this amount when dividing.'
+      body: 'The dowry.\n\nMechanics: Energy gifted to offspring at birth (and removed from the parent).\nEmergence: Larger E_new boosts newborn survival in poor zones but slows parent regrowth; small E_new favors rapid, risky expansion.'
     },
     'D': {
       title: 'D — Diffusion',
-      body: 'Diffusion coefficient for food between neighboring tiles. Higher values smooth the food field more quickly.'
+      body: 'How quickly the buffet spreads.\n\nField physics: Diffusion coefficient of food between tiles.\nEmergence: Higher D smooths gradients and feeds fronts from behind, enabling wider waves; low D creates stark patch boundaries and localized starvation pockets.'
     },
     'r': {
       title: 'r — Replenish',
-      body: 'Rate at which food replenishes toward F_max each tick.'
+      body: 'Nature’s refill rate.\n\nField physics: Relaxation toward F_max each tick.\nEmergence: Higher r supports persistent blooms and recovery after depletion; low r makes scarcities long-lived and selects for efficient foragers.'
     },
     'Fmax': {
       title: 'F_max — Carrying capacity',
-      body: 'Maximum food concentration supported by the environment.'
+      body: 'Ceiling of abundance.\n\nField physics: Maximum food concentration (target of replenish).\nEmergence: Higher F_max amplifies contrast in the colormap and increases potential energy inflow; interacts with u_max and K to set equilibrium densities.'
     },
     'delta': {
       title: 'δ — Decay',
-      body: 'Fractional decay applied to food each tick. Models loss due to external processes.'
+      body: 'Entropy tax on the pantry.\n\nField physics: Multiplicative decay of food each tick.\nEmergence: Non-zero decay discourages long-lived plateaus, carving channels and forcing continuous movement to fresher regions.'
     },
     'seedNoise': {
       title: 'Seed noise',
-      body: 'Noise amplitude added to the initial food field to create heterogeneous patches.'
+      body: 'Initial chaos factor.\n\nInitialization: Amplitude of random noise added to the seeded food field.\nEmergence: Higher noise creates hotspots and voids that shape early colony geometry; lower noise yields smoother, symmetric spreads.'
     }
   };
 
