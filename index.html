@@ -17,6 +17,14 @@
     <div class="hud" id="hud"></div>
   </div>
 
+  <div class="world-bar">
+    <div class="world-item"><label>Grid (W×H)</label><span class="value" id="gridSize">150×100</span></div>
+    <div class="world-item"><label>Pixel scale</label><span class="value" id="pxScale">4</span></div>
+    <div class="world-item"><label>Initial bacteria</label><input id="initB" type="number" step="1" value="150"></div>
+    <div class="world-item"><label>Random seed</label><input id="rngSeed" type="text" value="42"></div>
+    <div class="small">Re-run Reset after changing seed or counts.</div>
+  </div>
+
   <div class="panel">
     <div class="section">
       <h3>Run controls</h3>
@@ -36,89 +44,25 @@
 
     <div class="section">
       <h3>Biology params</h3>
-      <div class="knob-grid">
-        <div class="knob" data-key="u_max" data-min="0" data-max="2" data-step="0.01" title="Max uptake rate. Higher = faster consumption at high food.">
-          <div class="knob__title">u_max</div>
-          <div class="knob__dial" aria-label="u_max"><div class="knob__indicator"></div></div>
-          <div class="knob__value">1.00</div>
-          <input id="u_max" type="hidden" value="1.0" />
-        </div>
-        <div class="knob" data-key="K" data-min="0.01" data-max="1.0" data-step="0.01" title="Half-saturation constant in Monod uptake. Lower = more efficient at low food.">
-          <div class="knob__title">K (half-sat)</div>
-          <div class="knob__dial" aria-label="K"><div class="knob__indicator"></div></div>
-          <div class="knob__value">0.20</div>
-          <input id="K" type="hidden" value="0.2" />
-        </div>
-        <div class="knob" data-key="c_maint" data-min="0" data-max="0.5" data-step="0.01" title="Maintenance energy cost per tick. Higher = more deaths in scarcity.">
-          <div class="knob__title">Maintenance (c_maint)</div>
-          <div class="knob__dial" aria-label="c_maint"><div class="knob__indicator"></div></div>
-          <div class="knob__value">0.10</div>
-          <input id="c_maint" type="hidden" value="0.10" />
-        </div>
-        <div class="knob" data-key="Y_E" data-min="0.1" data-max="2.0" data-step="0.01" title="Yield: food uptake converted to internal energy.">
-          <div class="knob__title">Yield to energy (Y_E)</div>
-          <div class="knob__dial" aria-label="Y_E"><div class="knob__indicator"></div></div>
-          <div class="knob__value">1.00</div>
-          <input id="Y_E" type="hidden" value="1.0" />
-        </div>
-        <div class="knob" data-key="E_div" data-min="0.5" data-max="6.0" data-step="0.1" title="Energy threshold for division. When reached, can spawn offspring.">
-          <div class="knob__title">Division threshold (E_div)</div>
-          <div class="knob__dial" aria-label="E_div"><div class="knob__indicator"></div></div>
-          <div class="knob__value">3.0</div>
-          <input id="E_div" type="hidden" value="3.0" />
-        </div>
-        <div class="knob" data-key="E_new" data-min="0.5" data-max="3.0" data-step="0.1" title="Energy given to offspring upon division.">
-          <div class="knob__title">Offspring energy (E_new)</div>
-          <div class="knob__dial" aria-label="E_new"><div class="knob__indicator"></div></div>
-          <div class="knob__value">1.5</div>
-          <input id="E_new" type="hidden" value="1.5" />
-        </div>
-      </div>
+      <div class="row"><label title="Max uptake rate in Monod kinetics. Higher = faster consumption at high food.">u_max</label><input id="u_max" type="range" min="0" max="2" step="0.01" value="1.0"><span class="value" data-val="u_max">1.00</span></div>
+      <div class="row"><label title="Half-saturation constant in Monod uptake. Lower = better at low food.">K (half-sat)</label><input id="K" type="range" min="0.01" max="1.0" step="0.01" value="0.2"><span class="value" data-val="K">0.20</span></div>
+      <div class="row"><label title="Baseline energy cost per tick. Higher = higher starvation risk.">Maintenance (c_maint)</label><input id="c_maint" type="range" min="0" max="0.5" step="0.01" value="0.10"><span class="value" data-val="c_maint">0.10</span></div>
+      <div class="row"><label title="Yield factor: fraction of consumed food converted to internal energy.">Yield to energy (Y_E)</label><input id="Y_E" type="range" min="0.1" max="2.0" step="0.01" value="1.0"><span class="value" data-val="Y_E">1.00</span></div>
+      <div class="row"><label title="Energy threshold for a bacterium to divide.">Division threshold (E_div)</label><input id="E_div" type="range" min="0.5" max="6.0" step="0.1" value="3.0"><span class="value" data-val="E_div">3.0</span></div>
+      <div class="row"><label title="Energy granted to a newborn cell upon division.">Offspring energy (E_new)</label><input id="E_new" type="range" min="0.5" max="3.0" step="0.1" value="1.5"><span class="value" data-val="E_new">1.5</span></div>
     </div>
 
     <div class="section">
       <h3>Food field</h3>
-      <div class="knob-grid">
-        <div class="knob" data-key="D" data-min="0" data-max="0.5" data-step="0.01" title="Diffusion of food between tiles. Higher = smoother gradients.">
-          <div class="knob__title">Diffusion (D)</div>
-          <div class="knob__dial" aria-label="D"><div class="knob__indicator"></div></div>
-          <div class="knob__value">0.10</div>
-          <input id="D" type="hidden" value="0.10" />
-        </div>
-        <div class="knob" data-key="r" data-min="0" data-max="0.05" data-step="0.001" title="Replenishment rate toward Fmax each tick.">
-          <div class="knob__title">Replenish (r)</div>
-          <div class="knob__dial" aria-label="r"><div class="knob__indicator"></div></div>
-          <div class="knob__value">0.010</div>
-          <input id="r" type="hidden" value="0.01" />
-        </div>
-        <div class="knob" data-key="Fmax" data-min="0.1" data-max="2.0" data-step="0.1" title="Carrying capacity of food field.">
-          <div class="knob__title">F_max</div>
-          <div class="knob__dial" aria-label="Fmax"><div class="knob__indicator"></div></div>
-          <div class="knob__value">1.0</div>
-          <input id="Fmax" type="hidden" value="1.0" />
-        </div>
-        <div class="knob" data-key="delta" data-min="0" data-max="0.1" data-step="0.001" title="Food decay per tick (fraction).">
-          <div class="knob__title">Decay (δ)</div>
-          <div class="knob__dial" aria-label="delta"><div class="knob__indicator"></div></div>
-          <div class="knob__value">0.000</div>
-          <input id="delta" type="hidden" value="0.00" />
-        </div>
-        <div class="knob" data-key="seedNoise" data-min="0" data-max="1.0" data-step="0.01" title="Random noise added to initial food field.">
-          <div class="knob__title">Seed noise</div>
-          <div class="knob__dial" aria-label="seedNoise"><div class="knob__indicator"></div></div>
-          <div class="knob__value">0.35</div>
-          <input id="seedNoise" type="hidden" value="0.35" />
-        </div>
-      </div>
+      <div class="row"><label title="Diffusion coefficient of the food field between neighboring tiles.">Diffusion (D)</label><input id="D" type="range" min="0" max="0.5" step="0.01" value="0.10"><span class="value" data-val="D">0.10</span></div>
+      <div class="row"><label title="Replenishment rate toward carrying capacity Fmax per tick.">Replenish (r)</label><input id="r" type="range" min="0" max="0.05" step="0.001" value="0.01"><span class="value" data-val="r">0.010</span></div>
+      <div class="row"><label title="Carrying capacity (maximum) of food concentration.">F_max</label><input id="Fmax" type="range" min="0.1" max="2.0" step="0.1" value="1.0"><span class="value" data-val="Fmax">1.0</span></div>
+      <div class="row"><label title="Fractional decay of food each tick.">Decay (δ)</label><input id="delta" type="range" min="0" max="0.1" step="0.001" value="0.00"><span class="value" data-val="delta">0.000</span></div>
+      <div class="row"><label title="Random noise amplitude when seeding the food field.">Seed noise</label><input id="seedNoise" type="range" min="0" max="1.0" step="0.01" value="0.35"><span class="value" data-val="seedNoise">0.35</span></div>
     </div>
 
     <div class="section">
-      <h3>World</h3>
-      <div class="row"><label>Grid (W×H)</label><span class="value" id="gridSize">150×100</span></div>
-      <div class="row"><label>Pixel scale</label><span class="value" id="pxScale">4</span></div>
-      <div class="row"><label>Initial bacteria</label><input id="initB" type="number" step="1" value="150"></div>
-      <div class="row"><label>Random seed</label><input id="rngSeed" type="text" value="42"></div>
-      <div class="small">Re-run Reset after changing seed or counts.</div>
+      <h3>Presets</h3>
       <div style="margin-top:6px">
         <span class="small">Presets:</span>
         <button class="preset" data-preset="bloom">Bloom</button>
@@ -134,6 +78,15 @@
     </div>
   </div>
 
+  <!-- Info Modal -->
+  <div class="modal-backdrop" id="paramModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="paramModalTitle">
+      <h4 id="paramModalTitle">Parameter</h4>
+      <p id="paramModalBody">Description</p>
+      <div class="actions"><button id="paramModalClose" class="primary">Close</button></div>
+    </div>
+  </div>
+  <script src="sim.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

@@ -5,6 +5,7 @@
   canvas.width = W * SCALE; canvas.height = H * SCALE;
   const ctx = canvas.getContext('2d', { alpha: false });
   const hud = document.getElementById('hud');
+  const sim = new Sim(canvas, hud);
 
   // UI refs
   const ui = {
@@ -13,8 +14,8 @@
     delta: qs('#delta'), seedNoise: qs('#seedNoise'), initB: qs('#initB'), rngSeed: qs('#rngSeed'),
     speed: qs('#speed'),
   };
-  qid('gridSize').textContent = `${W}×${H}`;
-  qid('pxScale').textContent = `${SCALE}`;
+  qid('gridSize').textContent = `${sim.W}×${sim.H}`;
+  qid('pxScale').textContent = `${sim.SCALE}`;
 
   // RNG (mulberry32)
   function mulberry32(a){ return function(){ let t = a += 0x6D2B79F5; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; } }
@@ -40,79 +41,31 @@
     rand = mulberry32(h >>> 0);
   }
 
-  function seedFood(noise=0.35){
-    const Fmax = parseFloat(ui.Fmax.value);
-    for (let i=0;i<F.length;i++) {
-      // base with mild gradient + noise
-      const gx = (i % W) / W, gy = Math.floor(i / W) / H;
-      const base = 0.8 - 0.6*Math.hypot(gx-0.5, gy-0.5);
-      F[i] = clamp(base*Fmax + (rnd()*2-1)*noise*Fmax, 0, Fmax);
-    }
-  }
-
-  function seedBacteria(n=150){
-    const Ediv = parseFloat(ui.E_div.value);
-    for (let i=0;i<n;i++) B.push({ x: (rnd()*W)|0, y: (rnd()*H)|0, E: 0.5*Ediv });
-  }
-
   function reset(){
-    setSeed(ui.rngSeed.value);
-    B = []; ticks = 0; birthsTotal = 0; deathsTotal = 0;
-    F.fill(0); Ftmp.fill(0);
-    seedFood(parseFloat(ui.seedNoise.value));
-    seedBacteria(parseInt(ui.initB.value,10));
-    draw(); updateHUD();
+    sim.reset(
+      ui.rngSeed.value,
+      parseInt(ui.initB.value,10),
+      parseFloat(ui.seedNoise.value),
+      parseFloat(ui.E_div.value)
+    );
+    draw();
+    updateHUD();
   }
 
   // ===================== Simulation Core =====================
   function simulateTick(){
-    const umax = parseFloat(ui.u_max.value);
-    const K = parseFloat(ui.K.value);
-    const cMaint = parseFloat(ui.c_maint.value);
-    const YE = parseFloat(ui.Y_E.value);
-    const Ediv = parseFloat(ui.E_div.value);
-    const Enew = parseFloat(ui.E_new.value);
-
-    // Uptake + energy + local food
-    const births = [];
-    const survivors = [];
-
-    for (let i=0;i<B.length;i++){
-      const b = B[i];
-      const idx = b.x + b.y*W;
-      let f = F[idx];
-      let u = umax * f / (K + f + 1e-9);
-      if (u > f) u = f; // cannot consume more than available
-
-      b.E += YE*u - cMaint;
-      F[idx] = f - u;
-
-      // Death check
-      if (b.E <= 0) { deathsTotal++; continue; }
-
-      // Division check
-      if (b.E >= Ediv) {
-        // place offspring in random Moore neighbor
-        const dir = pickNeighbor();
-        const nx = clampInt(b.x + dir[0], 0, W-1);
-        const ny = clampInt(b.y + dir[1], 0, H-1);
-        if (b.E >= Enew) {
-          b.E -= Enew;
-          births.push({ x: nx, y: ny, E: Enew });
-          birthsTotal++;
-        }
-      }
-
-      survivors.push(b);
-    }
-
-    if (births.length) survivors.push(...births);
-    B = survivors;
-
-    // Food physics (diffusion + replenish + decay)
-    diffuseAndReplenish();
-
-    ticks++;
+    sim.tick({
+      u_max: parseFloat(ui.u_max.value),
+      K: parseFloat(ui.K.value),
+      c_maint: parseFloat(ui.c_maint.value),
+      Y_E: parseFloat(ui.Y_E.value),
+      E_div: parseFloat(ui.E_div.value),
+      E_new: parseFloat(ui.E_new.value),
+      D: parseFloat(ui.D.value),
+      r: parseFloat(ui.r.value),
+      Fmax: parseFloat(ui.Fmax.value),
+      delta: parseFloat(ui.delta.value),
+    });
   }
 
   function diffuseAndReplenish(){
@@ -154,32 +107,8 @@
   }
 
   // ===================== Rendering =====================
-  const img = ctx.createImageData(W*SCALE, H*SCALE);
-  const data = img.data;
-
   function draw(){
-    // Draw food field as grayscale → subtle bluish tint
-    for (let y=0; y<H; y++){
-      for (let x=0; x<W; x++){
-        const i = x + y*W;
-        const f = F[i];
-        const Fmax = parseFloat(ui.Fmax.value);
-        const v = Fmax > 0 ? (f / Fmax) : 0;
-        // color map: dark navy → cyan
-        const r = (8 + 30*v)|0;
-        const g = (14 + 150*v)|0;
-        const b = (28 + 200*v)|0;
-        putScaledPixel(x, y, r, g, b, 255);
-      }
-    }
-
-    // Draw bacteria as soft green pixels
-    for (let i=0;i<B.length;i++){
-      const {x,y} = B[i];
-      putScaledPixel(x, y, 170, 255, 190, 255);
-    }
-
-    ctx.putImageData(img, 0, 0);
+    sim.render(parseFloat(ui.Fmax.value));
   }
 
   function putScaledPixel(x, y, r, g, b, a){
@@ -194,14 +123,13 @@
   }
 
   function updateHUD(){
-    const avgFood = F.reduce((a,v)=>a+v,0) / F.length;
-    const avgE = B.length ? (B.reduce((a,b)=>a+b.E,0) / B.length) : 0;
+    const stats = sim.getStats(parseFloat(ui.Fmax.value));
     hud.innerHTML = `
-      <div><strong>Ticks:</strong> ${ticks}</div>
-      <div><strong>Bacteria:</strong> ${B.length}</div>
-      <div><strong>Avg energy:</strong> ${avgE.toFixed(2)}</div>
-      <div><strong>Avg food:</strong> ${avgFood.toFixed(3)}</div>
-      <div><strong>Births:</strong> ${birthsTotal} &nbsp; <strong>Deaths:</strong> ${deathsTotal}</div>
+      <div><strong>Ticks:</strong> ${stats.ticks}</div>
+      <div><strong>Bacteria:</strong> ${stats.count}</div>
+      <div><strong>Avg energy:</strong> ${stats.avgE.toFixed(2)}</div>
+      <div><strong>Avg food:</strong> ${stats.avgFood.toFixed(3)}</div>
+      <div><strong>Births:</strong> ${stats.births} &nbsp; <strong>Deaths:</strong> ${stats.deaths}</div>
     `;
   }
 
@@ -222,111 +150,133 @@
   });
   qid('btnStep').addEventListener('click', ()=>{ simulateTick(); draw(); updateHUD(); });
   qid('btnReset').addEventListener('click', ()=>{ reset(); });
-  qid('btnSeedB').addEventListener('click', ()=>{ seedBacteria(50); updateHUD(); draw(); });
-  qid('btnSeedF').addEventListener('click', ()=>{ seedFood(parseFloat(ui.seedNoise.value)); draw(); });
+  qid('btnSeedB').addEventListener('click', ()=>{ sim.seedBacteria(50, parseFloat(ui.E_div.value)); updateHUD(); draw(); });
+  qid('btnSeedF').addEventListener('click', ()=>{ sim.seedFood(parseFloat(ui.Fmax.value), parseFloat(ui.seedNoise.value)); draw(); });
 
   // Presets
   document.querySelectorAll('.preset').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const p = btn.dataset.preset;
       if (p === 'bloom'){
-        setKnob('u_max', 1.0); setKnob('K', 0.2); setKnob('c_maint', 0.10); setKnob('Y_E', 1.0); setKnob('E_div', 3); setKnob('E_new', 1.5);
-        setKnob('D', 0.10); setKnob('r', 0.01); setKnob('Fmax', 1.0); setKnob('delta', 0.0); setKnob('seedNoise', 0.35);
+        setSlider('u_max', 1.0); setSlider('K', 0.2); setSlider('c_maint', 0.10); setSlider('Y_E', 1.0); setSlider('E_div', 3); setSlider('E_new', 1.5);
+        setSlider('D', 0.10); setSlider('r', 0.01); setSlider('Fmax', 1.0); setSlider('delta', 0.0); setSlider('seedNoise', 0.35);
       } else if (p === 'patchy'){
-        setKnob('u_max', 0.9); setKnob('K', 0.3); setKnob('c_maint', 0.12); setKnob('Y_E', 0.95); setKnob('E_div', 3.4); setKnob('E_new', 1.7);
-        setKnob('D', 0.04); setKnob('r', 0.006); setKnob('Fmax', 1.1); setKnob('delta', 0.00); setKnob('seedNoise', 0.55);
+        setSlider('u_max', 0.9); setSlider('K', 0.3); setSlider('c_maint', 0.12); setSlider('Y_E', 0.95); setSlider('E_div', 3.4); setSlider('E_new', 1.7);
+        setSlider('D', 0.04); setSlider('r', 0.006); setSlider('Fmax', 1.1); setSlider('delta', 0.00); setSlider('seedNoise', 0.55);
       } else if (p === 'harsh'){
-        setKnob('u_max', 0.8); setKnob('K', 0.25); setKnob('c_maint', 0.18); setKnob('Y_E', 0.9); setKnob('E_div', 3.8); setKnob('E_new', 1.6);
-        setKnob('D', 0.10); setKnob('r', 0.004); setKnob('Fmax', 0.8); setKnob('delta', 0.02); setKnob('seedNoise', 0.30);
+        setSlider('u_max', 0.8); setSlider('K', 0.25); setSlider('c_maint', 0.18); setSlider('Y_E', 0.9); setSlider('E_div', 3.8); setSlider('E_new', 1.6);
+        setSlider('D', 0.10); setSlider('r', 0.004); setSlider('Fmax', 0.8); setSlider('delta', 0.02); setSlider('seedNoise', 0.30);
       } else if (p === 'fastdiff'){
-        setKnob('u_max', 1.0); setKnob('K', 0.2); setKnob('c_maint', 0.10); setKnob('Y_E', 1.0); setKnob('E_div', 3); setKnob('E_new', 1.5);
-        setKnob('D', 0.25); setKnob('r', 0.01); setKnob('Fmax', 1.0); setKnob('delta', 0.0); setKnob('seedNoise', 0.30);
+        setSlider('u_max', 1.0); setSlider('K', 0.2); setSlider('c_maint', 0.10); setSlider('Y_E', 1.0); setSlider('E_div', 3); setSlider('E_new', 1.5);
+        setSlider('D', 0.25); setSlider('r', 0.01); setSlider('Fmax', 1.0); setSlider('delta', 0.0); setSlider('seedNoise', 0.30);
       }
     });
   });
 
-  // ===================== Knob Logic =====================
-  const knobEls = Array.from(document.querySelectorAll('.knob'));
-  const knobState = new Map();
-
-  function clampToStep(value, min, max, step){
-    const v = Math.min(Math.max(value, min), max);
-    const snapped = Math.round((v - min) / step) * step + min;
-    return Number(snapped.toFixed(6));
+  // ===================== Slider Value Binding =====================
+  const sliderIds = ['u_max','K','c_maint','Y_E','E_div','E_new','D','r','Fmax','delta','seedNoise'];
+  function setSlider(id, value){
+    const el = qid(id);
+    if (!el) return;
+    el.value = String(value);
+    const disp = document.querySelector(`[data-val="${id}"]`);
+    if (disp) {
+      const stepAttr = el.getAttribute('step') || '0.01';
+      const decimals = (stepAttr.split('.')[1] || '').length;
+      disp.textContent = Number(value).toFixed(Math.min(3, Math.max(0, decimals)));
+    }
   }
 
-  function valueToAngle(value, min, max){
-    const t = (value - min) / (max - min || 1);
-    return -135 + t * 270; // map to [-135, 135]
-  }
-
-  function angleToValue(angle, min, max){
-    const t = (angle + 135) / 270;
-    return min + t * (max - min);
-  }
-
-  function formatValue(val, step){
-    const decimals = (step.toString().split('.')[1] || '').length;
-    return val.toFixed(Math.min(3, Math.max(0, decimals)));
-  }
-
-  function setKnob(key, value){
-    const entry = knobState.get(key);
-    if (!entry) return;
-    const v = clampToStep(value, entry.min, entry.max, entry.step);
-    entry.value = v;
-    entry.input.value = String(v);
-    entry.valueEl.textContent = formatValue(v, entry.step);
-    const ang = valueToAngle(v, entry.min, entry.max);
-    entry.ind.style.transform = `translate(-50%, 0) rotate(${ang}deg)`;
-  }
-
-  function initKnobs(){
-    knobEls.forEach(el=>{
-      const key = el.dataset.key;
-      const min = parseFloat(el.dataset.min);
-      const max = parseFloat(el.dataset.max);
-      const step = parseFloat(el.dataset.step);
-      const input = el.querySelector('input[type="hidden"]');
-      const dial = el.querySelector('.knob__dial');
-      const ind = el.querySelector('.knob__indicator');
-      const valueEl = el.querySelector('.knob__value');
-      const startValue = parseFloat(input.value);
-      knobState.set(key, { min, max, step, input, dial, ind, valueEl, value: startValue });
-      setKnob(key, startValue);
-
-      let dragging = false;
-      let startAngle = 0;
-      let startVal = startValue;
-
-      function updateFromPointer(clientX, clientY){
-        const rect = dial.getBoundingClientRect();
-        const cx = rect.left + rect.width/2;
-        const cy = rect.top + rect.height/2;
-        const ang = Math.atan2(clientY - cy, clientX - cx) * 180 / Math.PI + 90; // 0 at top
-        const clampedAng = Math.min(135, Math.max(-135, ang));
-        const rawVal = angleToValue(clampedAng, min, max);
-        setKnob(key, rawVal);
-      }
-
-      dial.addEventListener('mousedown', (e)=>{ dragging = true; e.preventDefault(); });
-      window.addEventListener('mousemove', (e)=>{ if (dragging) updateFromPointer(e.clientX, e.clientY); });
-      window.addEventListener('mouseup', ()=>{ dragging = false; });
-
-      dial.addEventListener('touchstart', (e)=>{ dragging = true; e.preventDefault(); });
-      window.addEventListener('touchmove', (e)=>{ if (!dragging) return; const t = e.touches[0]; updateFromPointer(t.clientX, t.clientY); }, { passive: false });
-      window.addEventListener('touchend', ()=>{ dragging = false; });
-
-      dial.addEventListener('wheel', (e)=>{
-        e.preventDefault();
-        const delta = Math.sign(e.deltaY) * step;
-        setKnob(key, knobState.get(key).value - delta);
-      }, { passive: false });
+  function bindSliders(){
+    sliderIds.forEach(id=>{
+      const el = qid(id);
+      const disp = document.querySelector(`[data-val="${id}"]`);
+      if (!el || !disp) return;
+      el.addEventListener('input', ()=> setSlider(id, parseFloat(el.value)));
+      // initialize display
+      setSlider(id, parseFloat(el.value));
     });
   }
 
-  // init knobs before first reset so values are in sync
-  initKnobs();
+  bindSliders();
+
+  // ===================== Param Info Modal =====================
+  const paramInfo = {
+    'u_max': {
+      title: 'u_max — Max uptake rate',
+      body: 'Maximum food uptake rate in Monod kinetics. Controls how quickly cells can consume when food is plentiful.'
+    },
+    'K': {
+      title: 'K — Half-saturation',
+      body: 'Food concentration at which uptake reaches half of u_max. Lower K increases efficiency at low food levels.'
+    },
+    'c_maint': {
+      title: 'c_maint — Maintenance cost',
+      body: 'Baseline energy expenditure per tick. If uptake cannot cover this, energy declines and cells may die.'
+    },
+    'Y_E': {
+      title: 'Y_E — Yield to energy',
+      body: 'Fraction of consumed food converted to internal energy. Higher values allow energy to accumulate faster.'
+    },
+    'E_div': {
+      title: 'E_div — Division threshold',
+      body: 'Internal energy level required to trigger division. On division, a new cell spawns in a neighboring tile.'
+    },
+    'E_new': {
+      title: 'E_new — Offspring energy',
+      body: 'Initial energy granted to the offspring. Parent loses this amount when dividing.'
+    },
+    'D': {
+      title: 'D — Diffusion',
+      body: 'Diffusion coefficient for food between neighboring tiles. Higher values smooth the food field more quickly.'
+    },
+    'r': {
+      title: 'r — Replenish',
+      body: 'Rate at which food replenishes toward F_max each tick.'
+    },
+    'Fmax': {
+      title: 'F_max — Carrying capacity',
+      body: 'Maximum food concentration supported by the environment.'
+    },
+    'delta': {
+      title: 'δ — Decay',
+      body: 'Fractional decay applied to food each tick. Models loss due to external processes.'
+    },
+    'seedNoise': {
+      title: 'Seed noise',
+      body: 'Noise amplitude added to the initial food field to create heterogeneous patches.'
+    }
+  };
+
+  function openParamModal(key){
+    const modal = qid('paramModal');
+    const t = qid('paramModalTitle');
+    const b = qid('paramModalBody');
+    const info = paramInfo[key];
+    if (!info) return;
+    t.textContent = info.title;
+    b.textContent = info.body;
+    modal.classList.add('modal-open');
+  }
+  function closeParamModal(){ qid('paramModal').classList.remove('modal-open'); }
+  qid('paramModalClose').addEventListener('click', closeParamModal);
+  qid('paramModal').addEventListener('click', (e)=>{ if (e.target === qid('paramModal')) closeParamModal(); });
+
+  function bindParamLabelClicks(){
+    const pairs = [
+      ['u_max','u_max'], ['K','K'], ['c_maint','c_maint'], ['Y_E','Y_E'], ['E_div','E_div'], ['E_new','E_new'],
+      ['D','D'], ['r','r'], ['Fmax','Fmax'], ['delta','delta'], ['seedNoise','seedNoise']
+    ];
+    pairs.forEach(([key, id])=>{
+      const row = qid(id)?.closest('.row');
+      if (!row) return;
+      const label = row.querySelector('label');
+      if (!label) return;
+      label.style.cursor = 'pointer';
+      label.addEventListener('click', ()=> openParamModal(key));
+    });
+  }
+  bindParamLabelClicks();
 
   // Helpers
   function clamp(v, lo, hi){ return v < lo ? lo : v > hi ? hi : v; }
