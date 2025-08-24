@@ -124,6 +124,7 @@
       r: parseFloat(ui.r.value),
       Fmax: parseFloat(ui.Fmax.value),
       delta: parseFloat(ui.delta.value),
+      moveRate: parseFloat(qid('moveRate')?.value || '0')
     });
   }
 
@@ -270,7 +271,22 @@
   window.appSetMode = setMode;
 
   // Drawing tools
-  const brushType = document.getElementById('brushType');
+  let brushTypeValue = 'food';
+  const btnBrushFood = qid('btnBrushFood');
+  const btnBrushObstacle = qid('btnBrushObstacle');
+  const btnBrushBacteria = qid('btnBrushBacteria');
+  function setBrush(type){
+    brushTypeValue = type;
+    if (btnBrushFood && btnBrushObstacle && btnBrushBacteria){
+      btnBrushFood.classList.toggle('primary', type==='food');
+      btnBrushObstacle.classList.toggle('primary', type==='obstacle');
+      btnBrushBacteria.classList.toggle('primary', type==='bacteria');
+    }
+  }
+  if (btnBrushFood) btnBrushFood.addEventListener('click', ()=> setBrush('food'));
+  if (btnBrushObstacle) btnBrushObstacle.addEventListener('click', ()=> setBrush('obstacle'));
+  if (btnBrushBacteria) btnBrushBacteria.addEventListener('click', ()=> setBrush('bacteria'));
+  setBrush('food');
   const brushSize = document.getElementById('brushSize');
   const brushStrength = document.getElementById('brushStrength');
 
@@ -291,7 +307,7 @@
         const px = Math.min(Math.max(0, x+dx), sim.W-1);
         const py = Math.min(Math.max(0, y+dy), sim.H-1);
         const i = px + py*sim.W;
-        const type = brushType.value;
+        const type = brushTypeValue;
         if (type === 'food'){
           const Fmax = parseFloat(ui.Fmax.value);
           sim.F[i] = Math.min(Fmax, sim.F[i] + strength*Fmax*0.2);
@@ -328,6 +344,7 @@
   const btnSavePreset = qid('btnSavePreset');
   const btnExportPresets = qid('btnExportPresets');
   const fileImportPresets = qid('fileImportPresets');
+  const btnNewEnv = qid('btnClearAll');
   let userPresets = [];
 
   function renderPresetList(){
@@ -366,6 +383,13 @@
         catch(err) { console.error('Invalid preset file'); }
       };
       reader.readAsText(f);
+    });
+  }
+
+  if (btnNewEnv){
+    btnNewEnv.addEventListener('click', ()=>{
+      sim.F.fill(0); sim.Ftmp.fill(0); sim.obs.fill(0); sim.B.length = 0;
+      draw(); updateHUD();
     });
   }
 

@@ -97,17 +97,19 @@
       <div class="row"><label>Import</label><input id="fileImportPresets" type="file" accept="application/json"></div>
     </div>
     <div class="section">
-      <h3>Draw tools</h3>
+      <h3>Ecosystem builder</h3>
+      <div class="row"><label>Clear all</label><button id="btnClearAll" class="warn">Clear all</button><span class="small">Removes food, bacteria and obstacles.</span></div>
       <div class="row"><label>Brush</label>
-        <select id="brushType">
-          <option value="food">Food</option>
-          <option value="obstacle">Obstacle</option>
-          <option value="bacteria">Bacteria</option>
-        </select>
+        <div class="btns" id="brushGroup">
+          <button id="btnBrushFood" class="primary">Food</button>
+          <button id="btnBrushObstacle">Obstacle</button>
+          <button id="btnBrushBacteria">Bacteria</button>
+        </div>
       </div>
       <div class="row"><label>Size</label><input id="brushSize" type="range" min="1" max="20" step="1" value="5"></div>
       <div class="row"><label>Strength</label><input id="brushStrength" type="range" min="0.1" max="1.0" step="0.1" value="0.6"></div>
-      <div class="small">Click or drag on the grid to paint. Obstacles block diffusion and bacteria.</div>
+      <div class="row"><label>Movement</label><input id="moveRate" type="range" min="0" max="1" step="0.05" value="0.20"><span class="value" data-val="moveRate">0.20</span></div>
+      <div class="small">Click or drag on the grid to paint. Obstacles block diffusion and bacteria. Movement lets bacteria wander while consuming food.</div>
     </div>
   </div>
 

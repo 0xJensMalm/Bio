@@ -121,6 +121,7 @@ button:disabled { opacity: .55; cursor: default; }
 .draw-item { display: flex; align-items: center; gap: 8px; }
 .draw-item select { background: #0a0e20; color: var(--text); border: 1px solid #28305a; border-radius: 8px; padding: 6px 8px; font-size: 12px; }
 .draw-tools { display: flex; align-items: center; gap: 10px; }
+.row select { background: #0a0e20; color: var(--text); border: 1px solid #28305a; border-radius: 8px; padding: 6px 8px; font-size: 12px; }
 .world-bar input[type="range"] {
   -webkit-appearance: none;
   appearance: none;

@@ -70,7 +70,7 @@
     }
 
     tick(params){
-      const { u_max, K, c_maint, Y_E, E_div, E_new, D, r, Fmax, delta } = params;
+      const { u_max, K, c_maint, Y_E, E_div, E_new, D, r, Fmax, delta, moveRate } = params;
 
       // Bacteria phase
       const births = []; const survivors = [];
@@ -88,10 +88,18 @@
           const dir = this.pickNeighbor();
           const nx = this.clampInt(b.x + dir[0], 0, this.W-1);
           const ny = this.clampInt(b.y + dir[1], 0, this.H-1);
-          if (b.E >= E_new){
+          if (b.E >= E_new && !this.obs[nx + ny*this.W]){
             b.E -= E_new;
             births.push({ x: nx, y: ny, E: E_new });
             this.birthsTotal++;
+          }
+        }
+        if (moveRate && moveRate > 0){
+          if (this.rnd() < moveRate){
+            const d = this.pickNeighbor();
+            const mx = this.clampInt(b.x + d[0], 0, this.W-1);
+            const my = this.clampInt(b.y + d[1], 0, this.H-1);
+            if (!this.obs[mx + my*this.W]){ b.x = mx; b.y = my; }
           }
         }
         survivors.push(b);
