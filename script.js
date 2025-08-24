@@ -482,6 +482,19 @@
   qid('paramModalClose').addEventListener('click', closeParamModal);
   qid('paramModal').addEventListener('click', (e)=>{ if (e.target === qid('paramModal')) closeParamModal(); });
 
+  // Welcome modal
+  const welcomeModal = qid('welcomeModal');
+  const welcomeStart = qid('welcomeStart');
+  const welcomeDont = qid('welcomeDont');
+  function closeWelcome(){ welcomeModal.classList.remove('modal-open'); if (welcomeDont?.checked){ try { localStorage.setItem('bio_welcome_dismissed','1'); } catch(_){} } }
+  if (welcomeStart) welcomeStart.addEventListener('click', closeWelcome);
+  if (welcomeModal){
+    try {
+      const dismissed = localStorage.getItem('bio_welcome_dismissed') === '1';
+      if (!dismissed) welcomeModal.classList.add('modal-open');
+    } catch(_) { welcomeModal.classList.add('modal-open'); }
+  }
+
   function bindParamLabelClicks(){
     const pairs = [
       ['u_max','u_max'], ['K','K'], ['c_maint','c_maint'], ['Y_E','Y_E'], ['E_div','E_div'], ['E_new','E_new'],

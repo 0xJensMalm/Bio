@@ -167,5 +167,6 @@ button:disabled { opacity: .55; cursor: default; }
 .modal .actions { display: flex; justify-content: flex-end; margin-top: 12px; }
 .modal .actions button { padding: 6px 10px; border-radius: 8px; }
 .modal-open { display: flex; }
+.modal p { margin-top: 6px; white-space: pre-line; }
 
 

@@ -150,6 +150,25 @@
       <div class="actions"><button id="paramModalClose" class="primary">Close</button></div>
     </div>
   </div>
+  <!-- Welcome Modal -->
+  <div class="modal-backdrop" id="welcomeModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+      <h4 id="welcomeTitle">Welcome to BIO</h4>
+      <p>
+        BIO is a bacterial growth simulation sandbox inspired by real microbial dynamics. By tuning both the internal biology (uptake, maintenance, yield, division) and the external food field (diffusion, replenish, capacity, decay), emergent behaviors appear: expanding fronts, patchy blooms, depletion rings, and boom–bust cycles.
+
+        Current features:
+        - Speed slider: adjust simulation speed in real time
+        - Bio: live‑tweak biology and food parameters; observe immediate effects
+        - Visuals (WIP): recolor the field and bacteria, tweak gamma and tracers
+        - Save & Presets: save/import/export parameter sets; Ecosystem builder to paint Food, Obstacles, and Bacteria manually
+      </p>
+      <div class="row" style="margin-top:8px">
+        <label><input type="checkbox" id="welcomeDont" /> Don’t show this again</label>
+      </div>
+      <div class="actions"><button id="welcomeStart" class="primary">Let’s start</button></div>
+    </div>
+  </div>
   <script src="sim.js"></script>
   <script src="visuals.js"></script>
   <script src="panels.js"></script>
