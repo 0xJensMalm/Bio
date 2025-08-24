@@ -13,6 +13,7 @@
 
       this.F = new Float32Array(this.W*this.H);
       this.Ftmp = new Float32Array(this.W*this.H);
+      this.obs = new Uint8Array(this.W*this.H);
       /** @type {{x:number, y:number, E:number}[]} */
       this.B = [];
 
@@ -50,7 +51,7 @@
     reset(seed, initB, seedNoise, E_div){
       this.setSeed(seed);
       this.B.length = 0; this.ticks = 0; this.birthsTotal = 0; this.deathsTotal = 0;
-      this.F.fill(0); this.Ftmp.fill(0);
+      this.F.fill(0); this.Ftmp.fill(0); this.obs.fill(0);
       this.seedFood(this.Fmax || 1.0, seedNoise);
       this.seedBacteria(initB, E_div);
     }
@@ -111,6 +112,7 @@
         for (let x=0; x<W; x++){
           const xW = (x>0? x-1 : x), xE = (x<W-1? x+1 : x);
           const i = x + y*W;
+          if (this.obs[i]){ this.Ftmp[i] = this.F[i]; continue; }
           const fn = F[x + yN*W];
           const fs = F[x + yS*W];
           const fw = F[xW + y*W];
@@ -144,11 +146,27 @@
           this.putScaledPixel(x, y, r, g, b, 255);
         }
       }
+      // Obstacles overlay to dim food
+      for (let y=0; y<H; y++){
+        for (let x=0; x<W; x++){
+          const i = x + y*W; if (!this.obs[i]) continue;
+          const ps = this.SCALE;
+          const baseX = x*ps, baseY = y*ps;
+          for (let dy=0; dy<ps; dy++){
+            for (let dx=0; dx<ps; dx++){
+              const idx = ((baseY+dy)*W*ps + (baseX+dx)) * 4;
+              data[idx+0] = (data[idx+0]*0.3)|0; data[idx+1] = (data[idx+1]*0.3)|0; data[idx+2] = (data[idx+2]*0.3)|0; data[idx+3] = 255;
+            }
+          }
+        }
+      }
+
       // Bacteria (base)
       for (let i=0;i<this.B.length;i++){
         const {x,y} = this.B[i];
         const [br,bg,bb] = this.theme.bacteria;
-        this.putScaledPixel(x, y, br, bg, bb, 255);
+        const idx = x + y*W;
+        if (!this.obs[idx]) this.putScaledPixel(x, y, br, bg, bb, 255);
       }
       this.ctx.putImageData(img, 0, 0);
 

@@ -150,6 +150,7 @@
   // ===================== Rendering =====================
   const overlay = document.getElementById('overlay');
   const overlayCtx = overlay ? overlay.getContext('2d') : null;
+  if (overlay){ overlay.width = canvas.width; overlay.height = canvas.height; }
   function draw(){
     sim.render(parseFloat(ui.Fmax.value), overlayCtx);
   }
@@ -231,6 +232,68 @@
   qid('btnReset').addEventListener('click', ()=>{ reset(); });
   qid('btnSeedB').addEventListener('click', ()=>{ sim.seedBacteria(50, parseFloat(ui.E_div.value)); updateHUD(); draw(); });
   qid('btnSeedF').addEventListener('click', ()=>{ sim.seedFood(parseFloat(ui.Fmax.value), parseFloat(ui.seedNoise.value)); draw(); });
+
+  // ===================== Mode switching & Drawing =====================
+  const btnModePreset = document.getElementById('btnModePreset');
+  const btnModeDraw = document.getElementById('btnModeDraw');
+  const drawTools = document.getElementById('drawTools');
+  let mode = 'preset';
+  function setMode(m){
+    mode = m;
+    if (mode === 'preset'){
+      btnModePreset.classList.add('primary'); btnModeDraw.classList.remove('primary');
+      if (drawTools) drawTools.style.display = 'none';
+      reset();
+    } else {
+      btnModeDraw.classList.add('primary'); btnModePreset.classList.remove('primary');
+      if (drawTools) drawTools.style.display = '';
+      // Draw mode starts empty (no seedFood)
+      sim.F.fill(0); sim.Ftmp.fill(0); sim.obs.fill(0); sim.B.length = 0; draw(); updateHUD();
+    }
+  }
+  if (btnModePreset) btnModePreset.addEventListener('click', ()=> setMode('preset'));
+  if (btnModeDraw) btnModeDraw.addEventListener('click', ()=> setMode('draw'));
+
+  // Drawing tools
+  const brushType = document.getElementById('brushType');
+  const brushSize = document.getElementById('brushSize');
+  const brushStrength = document.getElementById('brushStrength');
+
+  function paintAt(clientX, clientY){
+    if (mode !== 'draw') return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const cx = (clientX - rect.left) * scaleX;
+    const cy = (clientY - rect.top) * scaleY;
+    const x = Math.floor(cx / sim.SCALE);
+    const y = Math.floor(cy / sim.SCALE);
+    const r = parseInt(brushSize.value,10);
+    const strength = parseFloat(brushStrength.value);
+    for (let dy=-r; dy<=r; dy++){
+      for (let dx=-r; dx<=r; dx++){
+        if (dx*dx + dy*dy > r*r) continue;
+        const px = Math.min(Math.max(0, x+dx), sim.W-1);
+        const py = Math.min(Math.max(0, y+dy), sim.H-1);
+        const i = px + py*sim.W;
+        const type = brushType.value;
+        if (type === 'food'){
+          const Fmax = parseFloat(ui.Fmax.value);
+          sim.F[i] = Math.min(Fmax, sim.F[i] + strength*Fmax*0.2);
+        } else if (type === 'obstacle'){
+          sim.obs[i] = 1;
+        } else if (type === 'bacteria'){
+          sim.B.push({ x: px, y: py, E: parseFloat(ui.E_new.value) });
+        }
+      }
+    }
+    draw();
+  }
+
+  let drawing = false;
+  canvas.addEventListener('mousedown', (e)=>{ if (mode==='draw'){ drawing = true; paintAt(e.clientX, e.clientY); } });
+  window.addEventListener('mousemove', (e)=>{ if (drawing) paintAt(e.clientX, e.clientY); });
+  window.addEventListener('mouseup', ()=>{ drawing = false; });
 
   // Presets
   document.querySelectorAll('.preset').forEach(btn=>{
