@@ -8,8 +8,7 @@
 </head>
 <body>
   <header>
-    <h1>🧫 Bacterial Energy Automaton</h1>
-    <div class="sub">Simple rules → growth fronts, depletion, spread. All in one file.</div>
+    <h1>🧫 BIO v0.5</h1>
   </header>
 
   <div class="board-wrap">
@@ -31,35 +30,21 @@
           <button id="btnReset" class="warn">Reset</button>
           <button id="btnSeedB" title="Add bacteria">+ Bacteria</button>
           <button id="btnSeedF" title="Re-seed food field">Re-seed Food</button>
-          <label style="margin-left:8px; display:inline-block; min-width:40px">Speed</label>
-          <input id="speed" type="range" min="1" max="50" step="1" value="8" />
+          <span class="speed-wrap"><label style="display:inline-block; min-width:40px">Speed</label>
+          <input id="speed" type="range" min="1" max="50" step="1" value="8" /></span>
         </div>
       </div>
     </div>
     <div class="world-spacer"></div>
     <div class="world-right">
-      <button id="btnParams">Biology &amp; Food</button>
-      <button id="btnThemes">Themes</button>
-      <span class="small" style="margin-left:10px">Mode:</span>
-      <button id="btnModePreset" class="primary">Preset</button>
-      <button id="btnModeDraw">Draw</button>
-      <div class="draw-tools" id="drawTools" style="display:none; margin-left:10px">
-        <div class="draw-item"><label>Brush</label>
-          <select id="brushType">
-            <option value="food">Food</option>
-            <option value="obstacle">Obstacle</option>
-            <option value="bacteria">Bacteria</option>
-          </select>
-        </div>
-        <div class="draw-item"><label>Size</label><input id="brushSize" type="range" min="1" max="20" step="1" value="5"></div>
-        <div class="draw-item"><label>Strength</label><input id="brushStrength" type="range" min="0.1" max="1.0" step="0.1" value="0.6"></div>
-      </div>
+      <button id="tabBio" class="primary">Bio</button>
+      <button id="tabVisuals">Visuals</button>
+      <button id="tabDraw">Save &amp; Presets</button>
     </div>
-    <div class="small" style="width:100%">Re-run Reset after changing seed or counts.</div>
   </div>
   
 
-  <div class="panel">
+  <div class="panel" id="bioPanel">
 
     <div class="section">
       <h3>Biology params</h3>
@@ -80,16 +65,7 @@
       <div class="row"><label title="Random noise amplitude when seeding the food field.">Seed noise</label><input id="seedNoise" type="range" min="0" max="1.0" step="0.01" value="0.35"><span class="value" data-val="seedNoise">0.35</span></div>
     </div>
 
-    <div class="section">
-      <h3>Presets</h3>
-      <div style="margin-top:6px">
-        <span class="small">Presets:</span>
-        <button class="preset" data-preset="bloom">Bloom</button>
-        <button class="preset" data-preset="patchy">Patchy</button>
-        <button class="preset" data-preset="harsh">Harsh</button>
-        <button class="preset" data-preset="fastdiff">Fast diffusion</button>
-      </div>
-    </div>
+    
 
     <div class="section">
       <h3>Legend</h3>
@@ -97,7 +73,7 @@
     </div>
   </div>
 
-  <div class="panel" id="themesPanel" style="display:none">
+  <div class="panel" id="visualsPanel" style="display:none">
     <div class="section">
       <h3>Themes</h3>
       <div class="row"><label>Food low</label><input type="color" id="thFoodLow" value="#081e3c"></div>
@@ -108,6 +84,30 @@
       <div class="btns">
         <button id="btnThemeApply" class="primary">Apply</button>
       </div>
+    </div>
+  </div>
+
+  <div class="panel" id="drawPanel" style="display:none">
+    <div class="section">
+      <h3>Save &amp; Presets</h3>
+      <div class="row"><button id="btnPresetDefault" class="primary">Default</button><span class="small">Reset all parameters to defaults.</span></div>
+      <div class="row"><label>Name</label><input id="presetName" type="text" placeholder="My preset" style="width:140px"><button id="btnSavePreset">Save preset</button></div>
+      <div class="row"><label>My presets</label><div id="presetList" class="small"></div></div>
+      <div class="row"><label>Export</label><button id="btnExportPresets">Download JSON</button></div>
+      <div class="row"><label>Import</label><input id="fileImportPresets" type="file" accept="application/json"></div>
+    </div>
+    <div class="section">
+      <h3>Draw tools</h3>
+      <div class="row"><label>Brush</label>
+        <select id="brushType">
+          <option value="food">Food</option>
+          <option value="obstacle">Obstacle</option>
+          <option value="bacteria">Bacteria</option>
+        </select>
+      </div>
+      <div class="row"><label>Size</label><input id="brushSize" type="range" min="1" max="20" step="1" value="5"></div>
+      <div class="row"><label>Strength</label><input id="brushStrength" type="range" min="0.1" max="1.0" step="0.1" value="0.6"></div>
+      <div class="small">Click or drag on the grid to paint. Obstacles block diffusion and bacteria.</div>
     </div>
   </div>
 
@@ -149,7 +149,8 @@
     </div>
   </div>
   <script src="sim.js"></script>
-  <script src="themes.js"></script>
+  <script src="visuals.js"></script>
+  <script src="panels.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

@@ -81,6 +81,8 @@ button:disabled { opacity: .55; cursor: default; }
 
 .small { font-size: 11px; color: var(--muted); }
 .preset { display: inline-block; margin: 4px 6px 0 0; }
+.preset-item { display: inline-flex; align-items: center; gap: 6px; margin: 4px 8px 4px 0; padding: 4px 6px; border: 1px solid #232a4f; border-radius: 8px; }
+.preset-item button { padding: 2px 6px; }
 
 
 /* Knobs */
@@ -112,6 +114,8 @@ button:disabled { opacity: .55; cursor: default; }
 .world-spacer { display: none; }
 .world-item input[type="number"], .world-item input[type="text"] { width: 60px; background: #0a0e20; color: var(--text); border: 1px solid #28305a; border-radius: 8px; padding: 6px 8px; font-size: 12px; }
 .world-left .btns label, .world-left .btns input[type="range"] { margin-top: 4px; }
+.speed-wrap { display: inline-flex; align-items: center; gap: 8px; vertical-align: middle; }
+.speed-wrap input#speed { width: 280px; }
 
 .draw-bar { grid-column: 1 / span 2; display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; padding: 8px 12px; border: 1px solid #232a4f; border-radius: 12px; background: linear-gradient(180deg, var(--panel), var(--panel-2)); }
 .draw-item { display: flex; align-items: center; gap: 8px; }

@@ -82,10 +82,28 @@
     rand = mulberry32(h >>> 0);
   }
 
+  const defaultParams = {
+    u_max: 1.0, K: 0.2, c_maint: 0.10, Y_E: 1.0,
+    E_div: 3.0, E_new: 1.5,
+    D: 0.10, r: 0.01, Fmax: 1.0, delta: 0.0,
+    seedNoise: 0.35, initB: 150, rngSeed: '42'
+  };
+
+  function applyParams(p){
+    setSlider('u_max', p.u_max); setSlider('K', p.K); setSlider('c_maint', p.c_maint); setSlider('Y_E', p.Y_E);
+    setSlider('E_div', p.E_div); setSlider('E_new', p.E_new);
+    setSlider('D', p.D); setSlider('r', p.r); setSlider('Fmax', p.Fmax); setSlider('delta', p.delta);
+    setSlider('seedNoise', p.seedNoise);
+    qid('initB').value = String(p.initB);
+    qid('rngSeed').value = String(p.rngSeed);
+  }
+
   function reset(){
+    // Reset to defaults
+    applyParams(defaultParams);
     sim.reset(
-      ui.rngSeed.value,
-      parseInt(ui.initB.value,10),
+      qid('rngSeed').value,
+      parseInt(qid('initB').value,10),
       parseFloat(ui.seedNoise.value),
       parseFloat(ui.E_div.value)
     );
@@ -234,8 +252,6 @@
   qid('btnSeedF').addEventListener('click', ()=>{ sim.seedFood(parseFloat(ui.Fmax.value), parseFloat(ui.seedNoise.value)); draw(); });
 
   // ===================== Mode switching & Drawing =====================
-  const btnModePreset = document.getElementById('btnModePreset');
-  const btnModeDraw = document.getElementById('btnModeDraw');
   const drawTools = document.getElementById('drawTools');
   let mode = 'preset';
   function setMode(m){
@@ -251,8 +267,7 @@
       sim.F.fill(0); sim.Ftmp.fill(0); sim.obs.fill(0); sim.B.length = 0; draw(); updateHUD();
     }
   }
-  if (btnModePreset) btnModePreset.addEventListener('click', ()=> setMode('preset'));
-  if (btnModeDraw) btnModeDraw.addEventListener('click', ()=> setMode('draw'));
+  window.appSetMode = setMode;
 
   // Drawing tools
   const brushType = document.getElementById('brushType');
@@ -295,25 +310,64 @@
   window.addEventListener('mousemove', (e)=>{ if (drawing) paintAt(e.clientX, e.clientY); });
   window.addEventListener('mouseup', ()=>{ drawing = false; });
 
-  // Presets
-  document.querySelectorAll('.preset').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const p = btn.dataset.preset;
-      if (p === 'bloom'){
-        setSlider('u_max', 1.0); setSlider('K', 0.2); setSlider('c_maint', 0.10); setSlider('Y_E', 1.0); setSlider('E_div', 3); setSlider('E_new', 1.5);
-        setSlider('D', 0.10); setSlider('r', 0.01); setSlider('Fmax', 1.0); setSlider('delta', 0.0); setSlider('seedNoise', 0.35);
-      } else if (p === 'patchy'){
-        setSlider('u_max', 0.9); setSlider('K', 0.3); setSlider('c_maint', 0.12); setSlider('Y_E', 0.95); setSlider('E_div', 3.4); setSlider('E_new', 1.7);
-        setSlider('D', 0.04); setSlider('r', 0.006); setSlider('Fmax', 1.1); setSlider('delta', 0.00); setSlider('seedNoise', 0.55);
-      } else if (p === 'harsh'){
-        setSlider('u_max', 0.8); setSlider('K', 0.25); setSlider('c_maint', 0.18); setSlider('Y_E', 0.9); setSlider('E_div', 3.8); setSlider('E_new', 1.6);
-        setSlider('D', 0.10); setSlider('r', 0.004); setSlider('Fmax', 0.8); setSlider('delta', 0.02); setSlider('seedNoise', 0.30);
-      } else if (p === 'fastdiff'){
-        setSlider('u_max', 1.0); setSlider('K', 0.2); setSlider('c_maint', 0.10); setSlider('Y_E', 1.0); setSlider('E_div', 3); setSlider('E_new', 1.5);
-        setSlider('D', 0.25); setSlider('r', 0.01); setSlider('Fmax', 1.0); setSlider('delta', 0.0); setSlider('seedNoise', 0.30);
-      }
+  // Preset system
+  const btnPresetDefault = qid('btnPresetDefault');
+  if (btnPresetDefault){ btnPresetDefault.addEventListener('click', ()=>{ applyParams(defaultParams); reset(); }); }
+
+  function collectParams(){
+    return {
+      u_max: parseFloat(ui.u_max.value), K: parseFloat(ui.K.value), c_maint: parseFloat(ui.c_maint.value), Y_E: parseFloat(ui.Y_E.value),
+      E_div: parseFloat(ui.E_div.value), E_new: parseFloat(ui.E_new.value), D: parseFloat(ui.D.value), r: parseFloat(ui.r.value),
+      Fmax: parseFloat(ui.Fmax.value), delta: parseFloat(ui.delta.value), seedNoise: parseFloat(ui.seedNoise.value),
+      initB: parseInt(qid('initB').value,10), rngSeed: qid('rngSeed').value
+    };
+  }
+
+  const presetName = qid('presetName');
+  const presetListEl = qid('presetList');
+  const btnSavePreset = qid('btnSavePreset');
+  const btnExportPresets = qid('btnExportPresets');
+  const fileImportPresets = qid('fileImportPresets');
+  let userPresets = [];
+
+  function renderPresetList(){
+    if (!presetListEl) return;
+    presetListEl.innerHTML = '';
+    userPresets.forEach((p,i)=>{
+      const wrap = document.createElement('span'); wrap.className = 'preset-item';
+      const btnLoad = document.createElement('button'); btnLoad.textContent = p.name; btnLoad.addEventListener('click', ()=>{ applyParams(p.params); reset(); });
+      const btnDel = document.createElement('button'); btnDel.textContent = '✕'; btnDel.addEventListener('click', ()=>{ userPresets.splice(i,1); renderPresetList(); });
+      wrap.appendChild(btnLoad); wrap.appendChild(btnDel); presetListEl.appendChild(wrap);
     });
-  });
+  }
+
+  if (btnSavePreset){
+    btnSavePreset.addEventListener('click', ()=>{
+      const name = (presetName?.value || '').trim() || `Preset ${userPresets.length+1}`;
+      userPresets.push({ name, params: collectParams() });
+      renderPresetList();
+    });
+  }
+
+  if (btnExportPresets){
+    btnExportPresets.addEventListener('click', ()=>{
+      const blob = new Blob([JSON.stringify(userPresets, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'bio-presets.json'; a.click();
+      setTimeout(()=> URL.revokeObjectURL(a.href), 1000);
+    });
+  }
+
+  if (fileImportPresets){
+    fileImportPresets.addEventListener('change', (e)=>{
+      const f = e.target.files?.[0]; if (!f) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        try { const arr = JSON.parse(String(reader.result) || '[]'); if (Array.isArray(arr)) { userPresets = arr; renderPresetList(); } }
+        catch(err) { console.error('Invalid preset file'); }
+      };
+      reader.readAsText(f);
+    });
+  }
 
   // ===================== Slider Value Binding =====================
   const sliderIds = ['u_max','K','c_maint','Y_E','E_div','E_new','D','r','Fmax','delta','seedNoise'];
