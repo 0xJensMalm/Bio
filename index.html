@@ -36,6 +36,12 @@
           <button id="btnSeedF" title="Re-seed food field">Re-seed Food</button>
           <span class="speed-wrap"><label style="display:inline-block; min-width:40px">Speed</label>
           <input id="speed" type="range" min="1" max="3" step="1" value="1" /></span>
+          <div class="legend">
+            <span class="legend-item"><span id="swatchBact" class="swatch" style="background:#000000"></span>Bacteria</span>
+            <span class="legend-item"><span id="swatchHigh" class="swatch" style="background:#00ff00"></span>Food high</span>
+            <span class="legend-item"><span id="swatchLow" class="swatch" style="background:#ffff00"></span>Food low</span>
+            <span class="legend-item"><span id="swatchEmpty" class="swatch" style="background:#ffffff"></span>Empty</span>
+          </div>
         </div>
       </div>
     </div>
@@ -81,10 +87,10 @@
   <div class="panel" id="visualsPanel" style="display:none">
     <div class="section">
       <h3>Themes</h3>
-      <div class="row"><label>Food empty</label><input type="color" id="thFoodEmpty" value="#070a12"></div>
-      <div class="row"><label>Food low</label><input type="color" id="thFoodLow" value="#081e3c"></div>
-      <div class="row"><label>Food high</label><input type="color" id="thFoodHigh" value="#6ec3ff"></div>
-      <div class="row"><label>Bacteria</label><input type="color" id="thBacteria" value="#aaffbe"></div>
+      <div class="row"><label>Food empty</label><input type="color" id="thFoodEmpty" value="#ffffff"></div>
+      <div class="row"><label>Food low</label><input type="color" id="thFoodLow" value="#ffff00"></div>
+      <div class="row"><label>Food high</label><input type="color" id="thFoodHigh" value="#00ff00"></div>
+      <div class="row"><label>Bacteria</label><input type="color" id="thBacteria" value="#000000"></div>
       <div class="row"><label>Gamma</label><input type="range" id="fxGamma" min="0.5" max="2.0" step="0.05" value="1.0"><span class="value" data-val="fxGamma">1.00</span></div>
       <div class="row"><label>Tracers</label><input type="range" id="fxTrace" min="0" max="1" step="0.05" value="0.4"><span class="value" data-val="fxTrace">0.40</span></div>
       <div class="btns">

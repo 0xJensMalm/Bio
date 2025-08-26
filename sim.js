@@ -23,10 +23,10 @@
       this.data = this.img.data;
 
       this.theme = {
-        foodEmpty: [7, 10, 18],
-        foodLow: [8, 30, 60],
-        foodHigh: [110, 195, 255],
-        bacteria: [170, 255, 190],
+        foodEmpty: [255, 255, 255],
+        foodLow: [255, 255, 0],
+        foodHigh: [0, 255, 0],
+        bacteria: [0, 0, 0],
         gamma: 1.0
       };
     }

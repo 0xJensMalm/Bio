@@ -19,5 +19,10 @@
       gamma: Number(gamma ? gamma.value : 1.0),
       tracerAlpha: Number(trace ? trace.value : 0)
     });
+    // Update legend swatches
+    const sEmpty = document.getElementById('swatchEmpty'); if (sEmpty && q('thFoodEmpty')) sEmpty.style.background = q('thFoodEmpty').value;
+    const sLow = document.getElementById('swatchLow'); if (sLow && q('thFoodLow')) sLow.style.background = q('thFoodLow').value;
+    const sHigh = document.getElementById('swatchHigh'); if (sHigh && q('thFoodHigh')) sHigh.style.background = q('thFoodHigh').value;
+    const sB = document.getElementById('swatchBact'); if (sB && q('thBacteria')) sB.style.background = q('thBacteria').value;
   }
 })();
