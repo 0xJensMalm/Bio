@@ -23,6 +23,7 @@
       this.data = this.img.data;
 
       this.theme = {
+        foodEmpty: [7, 10, 18],
         foodLow: [8, 30, 60],
         foodHigh: [110, 195, 255],
         bacteria: [170, 255, 190],
@@ -138,6 +139,7 @@
 
     render(Fmax, overlayCtx){
       const W = this.W, H = this.H, SCALE = this.SCALE, data = this.data, img = this.img;
+      const [re,ge,be] = this.theme.foodEmpty;
       const [rl,gl,bl] = this.theme.foodLow;
       const [rh,gh,bh] = this.theme.foodHigh;
       const gamma = this.theme.gamma || 1.0;
@@ -146,6 +148,10 @@
         for (let x=0; x<W; x++){
           const i = x + y*W;
           const f = this.F[i];
+          if (f <= 0){
+            this.putScaledPixel(x, y, re, ge, be, 255);
+            continue;
+          }
           let v = Fmax > 0 ? (f / Fmax) : 0;
           if (gamma !== 1.0){ v = Math.pow(v, 1/gamma); }
           const r = (rl + (rh-rl)*v)|0;
@@ -224,7 +230,7 @@
       };
     }
 
-    setTheme({ foodLow, foodHigh, bacteria, gamma, tracerAlpha }){
+    setTheme({ foodEmpty, foodLow, foodHigh, bacteria, gamma, tracerAlpha }){
       const parse = (hex)=>{
         if (!hex) return null;
         const m = /^#?([0-9a-fA-F]{6})$/.exec(hex);
@@ -232,7 +238,8 @@
         const h = m[1];
         return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
       };
-      const fl = parse(foodLow); const fh = parse(foodHigh); const bc = parse(bacteria);
+      const fe = parse(foodEmpty); const fl = parse(foodLow); const fh = parse(foodHigh); const bc = parse(bacteria);
+      if (fe) this.theme.foodEmpty = fe;
       if (fl) this.theme.foodLow = fl;
       if (fh) this.theme.foodHigh = fh;
       if (bc) this.theme.bacteria = bc;

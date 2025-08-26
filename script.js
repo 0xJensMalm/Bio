@@ -202,6 +202,10 @@
   const chartFood = document.getElementById('chartFood');
   const chartCtxCount = chartCount ? chartCount.getContext('2d') : null;
   const chartCtxFood = chartFood ? chartFood.getContext('2d') : null;
+  const chartCountOverlay = document.getElementById('chartCountOverlay');
+  const chartFoodOverlay = document.getElementById('chartFoodOverlay');
+  const chartCtxCountOv = chartCountOverlay ? chartCountOverlay.getContext('2d') : null;
+  const chartCtxFoodOv = chartFoodOverlay ? chartFoodOverlay.getContext('2d') : null;
   const histLen = 300;
   const seriesCount = []; const seriesFood = [];
 
@@ -213,9 +217,12 @@
     if (seriesFood.length > histLen) seriesFood.shift();
   }
 
-  function drawSeries(ctx, series, color){
+  function drawSeries(ctx, series, color, label, latestFormatter){
     if (!ctx || series.length < 2) return;
-    const w = ctx.canvas.width, h = ctx.canvas.height;
+    const w = ctx.canvas.clientWidth || ctx.canvas.width;
+    const h = ctx.canvas.clientHeight || ctx.canvas.height;
+    if (ctx.canvas.width !== w) ctx.canvas.width = w;
+    if (ctx.canvas.height !== h) ctx.canvas.height = h;
     ctx.clearRect(0,0,w,h);
     ctx.fillStyle = '#0b0e1a'; ctx.fillRect(0,0,w,h);
     ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath();
@@ -227,6 +234,13 @@
       if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
     }
     ctx.stroke();
+    // Labels
+    const latest = series[series.length-1];
+    ctx.fillStyle = '#c6d0ff'; ctx.font = '11px ui-sans-serif, system-ui, -apple-system';
+    ctx.fillText(label, 6, 12);
+    const valText = latestFormatter ? latestFormatter(latest) : String(latest);
+    const textWidth = ctx.measureText(valText).width;
+    ctx.fillText(valText, w - textWidth - 6, 12);
   }
 
   // ===================== Loop =====================
@@ -236,8 +250,10 @@
       for (let s=0;s<steps;s++) simulateTick();
       draw(); updateHUD();
       pushSeries();
-      drawSeries(chartCtxCount, seriesCount, '#7ae582');
-      drawSeries(chartCtxFood, seriesFood, '#6ec3ff');
+      drawSeries(chartCtxCount, seriesCount, '#7ae582', 'Bacteria', (v)=> String(v));
+      drawSeries(chartCtxFood, seriesFood, '#6ec3ff', 'Avg food', (v)=> v.toFixed(3));
+      drawSeries(chartCtxCountOv, seriesCount, '#7ae582', 'Bacteria', (v)=> String(v));
+      drawSeries(chartCtxFoodOv, seriesFood, '#6ec3ff', 'Avg food', (v)=> v.toFixed(3));
     }
     requestAnimationFrame(loop);
   }
@@ -254,6 +270,7 @@
 
   // ===================== Mode switching & Drawing =====================
   const drawTools = document.getElementById('drawTools');
+  const ecoPanel = document.getElementById('ecoPanel');
   let mode = 'preset';
   function setMode(m){
     mode = m;

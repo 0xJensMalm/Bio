@@ -12,6 +12,7 @@
   function applyTheme(){
     if (!window.simInstance) return;
     window.simInstance.setTheme({
+      foodEmpty: q('thFoodEmpty')?.value,
       foodLow: q('thFoodLow').value,
       foodHigh: q('thFoodHigh').value,
       bacteria: q('thBacteria').value,
